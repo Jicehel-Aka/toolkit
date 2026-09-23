@@ -1,0 +1,90 @@
+name: Build and release the AKA Toolkit
+
+# Rassemble en UNE seule Release ce qu'un utilisateur doit copier pour développer sur l'AKA :
+#   - AKA-IDE, l'exécutable pour sa machine (Windows et Linux)
+#   - SD_files/ : tout ce qu'il faut copier sur la carte SD (chaque firmware dans son propre dossier,
+#     plus AKA/ partagé) — prêt à l'emploi, chemins corrects.
+#
+# CE DÉPÔT NE CONTIENT PAS DE CODE : il télécharge la dernière Release de chacun des trois dépôts
+# ci-dessous (déjà buildés par LEUR PROPRE workflow) et les assemble. Si l'un des trois dépôts n'a
+# encore aucune Release, ce workflow échoue clairement sur cette étape plutôt que de publier un
+# paquet incomplet.
+#
+# À COMPLÉTER avant le premier lancement (les deux derniers ne sont pas confirmés à ce jour) :
+env:
+  AKA_IDE_REPO: Jicehel-Aka/AKA-IDE-Linux-new         # confirmé (log de build du 23/09)
+  AKA_LOVE_REPO: Jicehel-Aka/AKA-LOVE-A-COMPLETER     # <-- À REMPLACER par le vrai nom du dépôt
+  MICROPYTHON_REPO: Jicehel-Aka/MicroPython-A-COMPLETER  # <-- À REMPLACER par le vrai nom du dépôt
+
+on:
+  workflow_dispatch:        # bouton "Run workflow" -- toujours disponible, quel que soit ce qui suit
+  schedule:
+    - cron: '0 6 * * 1'      # tous les lundis à 6h UTC : rattrape les releases publiées entre-temps
+  repository_dispatch:       # déclenchement automatique dès qu'un des 3 dépôts publie -- voir la note
+    types: [aka-source-released]   # "Automatiser le déclenchement" plus bas pour l'activer
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4   # pour AKA/languages.csv de référence, voir plus bas
+
+      # GH_TOKEN : le jeton par défaut suffit pour des dépôts PUBLICS. Pour des dépôts PRIVÉS, remplacez
+      # par un secret contenant un Personal Access Token ayant accès aux 3 dépôts (Settings -> Secrets
+      # and variables -> Actions -> New repository secret, par ex. TOOLKIT_PAT), et utilisez
+      # `${{ secrets.TOOLKIT_PAT }}` ci-dessous à la place de `${{ github.token }}`.
+      - name: Download latest releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dl/ide dl/love dl/mpy
+          gh release download --repo "$AKA_IDE_REPO"     --pattern 'aka-ide-*.zip'            --dir dl/ide  --clobber
+          gh release download --repo "$AKA_LOVE_REPO"    --pattern 'aka-love-sdcard-*.zip'    --dir dl/love --clobber
+          gh release download --repo "$MICROPYTHON_REPO" --pattern 'micropython-aka-sdcard-*.zip' --dir dl/mpy --clobber
+
+      - name: Assemble SD_files
+        run: |
+          mkdir -p SD_files
+          # -o : écrase sans demander -- indispensable, les deux zips contiennent tous les deux AKA/
+          # languages.csv (identique des deux côtés) ; sans -o, unzip pose une question interactive et
+          # BLOQUE le job indéfiniment (trouvé en testant l'assemblage en local avant d'écrire ce fichier).
+          unzip -qo "dl/love/$(ls dl/love)" -d SD_files          # dépose AKA_Love/ et AKA/ à la racine
+          unzip -qo "dl/mpy/$(ls dl/mpy)" -d SD_files            # dépose micropython/, py/ et AKA/
+          (cd SD_files && zip -r ../SD_files.zip .)
+
+      # Copie APRÈS l'assemblage ci-dessus, en écrasant : si ce dépôt garde une copie de référence de
+      # AKA/languages.csv (utile pour ajouter un futur langage AVANT que son firmware existe), elle
+      # prime sur celles embarquées dans les zips AKA-Love / MicroPython.
+      - name: Apply reference AKA/languages.csv (if present in this repo)
+        run: |
+          if [ -f AKA/languages.csv ]; then
+            mkdir -p SD_files/AKA
+            cp AKA/languages.csv SD_files/AKA/languages.csv
+            cd SD_files && zip -r ../SD_files.zip AKA
+          fi
+
+      - name: Rename AKA-IDE executables
+        run: |
+          mkdir -p ide_out
+          cp dl/ide/*win-x64*.zip  ide_out/aka-ide-windows.zip  2>/dev/null || true
+          cp dl/ide/*linux-x64*.zip ide_out/aka-ide-linux.zip   2>/dev/null || true
+
+      - name: Next minor version
+        id: version
+        run: |
+          last=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1)
+          last=${last:-v0.0.0}
+          IFS=. read -r major minor _ <<< "${last#v}"
+          echo "tag=v${major}.$((minor + 1)).0" >> "$GITHUB_OUTPUT"
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          gh release create "$TAG" SD_files.zip ide_out/*.zip \
+            --target "$GITHUB_SHA" --title "AKA Toolkit $TAG" --generate-notes
