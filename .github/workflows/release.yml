@@ -10,11 +10,11 @@ name: Build and release the AKA Toolkit
 # encore aucune Release, ce workflow échoue clairement sur cette étape plutôt que de publier un
 # paquet incomplet.
 #
-# À COMPLÉTER avant le premier lancement (les deux derniers ne sont pas confirmés à ce jour) :
+# Les trois dépôts sources sont confirmés (23 septembre) :
 env:
   AKA_IDE_REPO: Jicehel-Aka/AKA-IDE-Linux-new         # confirmé (log de build du 23/09)
-  AKA_LOVE_REPO: Jicehel-Aka/AKA-LOVE-A-COMPLETER     # <-- À REMPLACER par le vrai nom du dépôt
-  MICROPYTHON_REPO: Jicehel-Aka/MicroPython-A-COMPLETER  # <-- À REMPLACER par le vrai nom du dépôt
+  AKA_LOVE_REPO: Jicehel-Aka/akalove                  # confirmé
+  MICROPYTHON_REPO: Jicehel-Aka/MycroPython           # confirmé (orthographe du dépôt, pas une coquille de ma part)
 
 on:
   workflow_dispatch:        # bouton "Run workflow" -- toujours disponible, quel que soit ce qui suit

@@ -5,20 +5,17 @@ développer sur la console AKA, à partir des dépôts qui font le vrai travail 
 
 - **AKA-IDE** ([Jicehel-Aka/AKA-IDE-Linux-new](https://github.com/Jicehel-Aka/AKA-IDE-Linux-new)) — l'éditeur
   pour votre machine (Windows et Linux), en un seul exécutable autonome.
-- **AKA-Love** — le firmware Lua/Love2D (nom de dépôt à compléter, voir `.github/workflows/release.yml`).
-- **MicroPython-AKA** — le firmware MicroPython (nom de dépôt à compléter, même fichier).
+- **AKA-Love** ([Jicehel-Aka/akalove](https://github.com/Jicehel-Aka/akalove)) — le firmware Lua/Love2D.
+- **MicroPython-AKA** ([Jicehel-Aka/MycroPython](https://github.com/Jicehel-Aka/MycroPython)) — le firmware MicroPython.
 
 Résultat de chaque exécution : deux fichiers dans les Releases de **ce** dépôt —
 `aka-ide-windows-vX.Y.0.zip` / `aka-ide-linux-vX.Y.0.zip` (l'IDE), et `SD_files.zip` (tout ce qu'il y a
 à copier sur la carte SD, chemins déjà corrects — voir « Contenu de SD_files » ci-dessous).
 
-## À compléter avant le premier lancement
+## Avant le premier lancement
 
-Ouvrez `.github/workflows/release.yml` et remplacez les deux lignes marquées `À REMPLACER` par les
-vrais noms de dépôt GitHub d'AKA-Love et de MicroPython-AKA (`Jicehel-Aka/<nom-du-dépôt>`). Le nom
-d'AKA-IDE est déjà correct.
-
-**Chacun des trois dépôts doit avoir publié au moins une Release** (son propre `release.yml`, déjà en
+Les trois noms de dépôt sont déjà renseignés dans `.github/workflows/release.yml`. Il ne reste qu'une
+condition : **chacun des trois dépôts doit avoir publié au moins une Release** (son propre `release.yml`, déjà en
 place dans chacun) avant que ce workflow puisse fonctionner — il télécharge la dernière Release de
 chaque dépôt, il ne compile rien lui-même.
 
