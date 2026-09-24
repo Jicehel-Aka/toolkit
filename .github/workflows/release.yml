@@ -36,14 +36,47 @@ jobs:
       # par un secret contenant un Personal Access Token ayant accès aux 3 dépôts (Settings -> Secrets
       # and variables -> Actions -> New repository secret, par ex. TOOLKIT_PAT), et utilisez
       # `${{ secrets.TOOLKIT_PAT }}` ci-dessous à la place de `${{ github.token }}`.
+      # secrets.TOOLKIT_PAT || github.token : utilise le PAT s'il est configuré (dépôts privés), sinon
+      # le jeton par défaut (suffisant pour des dépôts publics) -- voir la note plus haut.
       - name: Download latest releases
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.TOOLKIT_PAT || github.token }}
         run: |
-          mkdir -p dl/ide dl/love dl/mpy
-          gh release download --repo "$AKA_IDE_REPO"     --pattern 'aka-ide-*.zip'            --dir dl/ide  --clobber
-          gh release download --repo "$AKA_LOVE_REPO"    --pattern 'aka-love-sdcard-*.zip'    --dir dl/love --clobber
-          gh release download --repo "$MICROPYTHON_REPO" --pattern 'micropython-aka-sdcard-*.zip' --dir dl/mpy --clobber
+          set -Eeuo pipefail
+
+          # Un seul type de motif (glob, PAS une regex) du début à la fin : gh release download
+          # --pattern attend un glob ("aka-ide-*.zip"), pas une expression régulière -- lui passer une
+          # regex comme '^aka-ide-.*\.zip$' ne matcherait jamais rien (le ^, le $ et le \. n'ont aucun
+          # sens en glob), l'échec passerait alors inaperçu et redeviendrait un "release not found"
+          # aussi peu clair qu'avant.
+          download_asset() {
+            local repo="$1" glob="$2" out_dir="$3"
+            echo "Vérification de la dernière release de ${repo}..."
+            if ! gh release view --repo "$repo" >/dev/null 2>&1; then
+              echo "::error::Aucune release publiée (ou accessible avec ce jeton) dans ${repo}"
+              exit 1
+            fi
+
+            local matched=0 name
+            while IFS= read -r name; do
+              # shellcheck disable=SC2053 -- comparaison glob voulue, $glob volontairement sans guillemets
+              if [[ "$name" == $glob ]]; then matched=1; fi
+            done < <(gh release view --repo "$repo" --json assets --jq '.assets[].name')
+
+            if [ "$matched" -eq 0 ]; then
+              echo "::error::Aucun fichier correspondant à '${glob}' dans la dernière release de ${repo}"
+              echo "Fichiers présents dans cette release :"
+              gh release view --repo "$repo" --json assets --jq '.assets[].name'
+              exit 1
+            fi
+
+            mkdir -p "$out_dir"
+            gh release download --repo "$repo" --pattern "$glob" --dir "$out_dir" --clobber
+          }
+
+          download_asset "$AKA_IDE_REPO"     'aka-ide-*.zip'                 dl/ide
+          download_asset "$AKA_LOVE_REPO"    'aka-love-sdcard-*.zip'         dl/love
+          download_asset "$MICROPYTHON_REPO" 'micropython-aka-sdcard-*.zip' dl/mpy
 
       - name: Assemble SD_files
         run: |
