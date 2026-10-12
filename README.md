@@ -3,14 +3,19 @@
 Ce dépôt **ne contient pas de code** : il assemble, en une seule Release GitHub, ce qu'il faut pour
 développer sur la console AKA, à partir des dépôts qui font le vrai travail :
 
-- **AKA-IDE** ([Jicehel-Aka/AKA-IDE-Linux-new](https://github.com/Jicehel-Aka/AKA-IDE-Linux-new)) — l'éditeur
-  pour votre machine (Windows et Linux), en un seul exécutable autonome.
+- **AKA-IDE** ([Jicehel-Aka/AKA-IDE-Linux-](https://github.com/Jicehel-Aka/AKA-IDE-Linux-)) — l'éditeur
+  pour votre machine (Windows et Linux), en un seul exécutable autonome. Il **embarque déjà** les
+  simulateurs PC (`aka-py-sim` pour MicroPython, `akalove-play` pour Love2D) : « Tester (PC) »
+  fonctionne sans rien installer d'autre.
 - **AKA-Love** ([Jicehel-Aka/akalove](https://github.com/Jicehel-Aka/akalove)) — le firmware Lua/Love2D.
 - **MicroPython-AKA** ([Jicehel-Aka/MycroPython](https://github.com/Jicehel-Aka/MycroPython)) — le firmware MicroPython.
 
-Résultat de chaque exécution : deux fichiers dans les Releases de **ce** dépôt —
-`aka-ide-windows-vX.Y.0.zip` / `aka-ide-linux-vX.Y.0.zip` (l'IDE), et `SD_files.zip` (tout ce qu'il y a
-à copier sur la carte SD, chemins déjà corrects — voir « Contenu de SD_files » ci-dessous).
+Résultat de chaque exécution : trois fichiers dans les Releases de **ce** dépôt —
+`aka-ide-windows.zip` et `aka-ide-linux.tar.gz` (l'IDE pour votre machine), et `SD_files.zip` (tout ce
+qu'il y a à copier sur la carte SD, chemins déjà corrects — voir « Contenu de SD_files » ci-dessous).
+
+**Pour l'utilisateur final** : prends le fichier IDE de ton OS (Windows **ou** Linux), et copie le
+contenu de `SD_files.zip` à la racine de ta carte SD. C'est tout — docs et exemples inclus.
 
 ## Avant le premier lancement
 
@@ -59,7 +64,7 @@ d'un langage AVANT même que son firmware sache le lire.
 
 ## Statut
 
-Aucune partie de ce dépôt n'a tourné réellement (ni AKA-IDE, ni AKA-Love, ni MicroPython-AKA n'ont
-encore de release publiée à ma connaissance) : `actionlint` valide la syntaxe, l'assemblage a été
-rejoué à la main avec des fichiers factices (mêmes noms, mêmes dossiers), mais le tout premier vrai
-run — une fois les deux noms de dépôt complétés et au moins une release publiée partout — reste à faire.
+Les trois dépôts sources ont désormais des releases publiées : **AKA-IDE v2.0.0**, **AKA-Love v0.12.0**,
+**MicroPython-AKA v0.5.0**. Le workflow a été aligné sur les noms d'assets réels publiés par chacun
+(`GamebuinoAKA-IDE-*`, `aka-love-sdcard-*.zip`, `micropython-aka-sdcard-*.zip`). Lance « Run workflow »
+pour produire la première release combinée.

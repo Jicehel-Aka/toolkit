@@ -12,7 +12,7 @@ name: Build and release the AKA Toolkit
 #
 # Les trois dépôts sources sont confirmés (23 septembre) :
 env:
-  AKA_IDE_REPO: Jicehel-Aka/AKA-IDE-Linux-new         # confirmé (log de build du 23/09)
+  AKA_IDE_REPO: Jicehel-Aka/AKA-IDE-Linux-            # dépôt IDE actif (édition Avalonia + scripts MicroPython/Love2D)
   AKA_LOVE_REPO: Jicehel-Aka/akalove                  # confirmé
   MICROPYTHON_REPO: Jicehel-Aka/MycroPython           # confirmé (orthographe du dépôt, pas une coquille de ma part)
 
@@ -74,7 +74,8 @@ jobs:
             gh release download --repo "$repo" --pattern "$glob" --dir "$out_dir" --clobber
           }
 
-          download_asset "$AKA_IDE_REPO"     'aka-ide-*.zip'                 dl/ide
+          # L'IDE publie GamebuinoAKA-IDE-windows-x64.zip et GamebuinoAKA-IDE-linux-x64.tar.gz.
+          download_asset "$AKA_IDE_REPO"     'GamebuinoAKA-IDE-*'            dl/ide
           download_asset "$AKA_LOVE_REPO"    'aka-love-sdcard-*.zip'         dl/love
           download_asset "$MICROPYTHON_REPO" 'micropython-aka-sdcard-*.zip' dl/mpy
 
@@ -99,11 +100,13 @@ jobs:
             cd SD_files && zip -r ../SD_files.zip AKA
           fi
 
+      # Windows : .zip ; Linux : .tar.gz (on garde l'extension correcte). L'IDE embarque déjà
+      # ses simulateurs PC (aka-py-sim + akalove-play) dans sims/ -- rien à ajouter ici.
       - name: Rename AKA-IDE executables
         run: |
           mkdir -p ide_out
-          cp dl/ide/*win-x64*.zip  ide_out/aka-ide-windows.zip  2>/dev/null || true
-          cp dl/ide/*linux-x64*.zip ide_out/aka-ide-linux.zip   2>/dev/null || true
+          cp dl/ide/*windows-x64*.zip  ide_out/aka-ide-windows.zip
+          cp dl/ide/*linux-x64*.tar.gz ide_out/aka-ide-linux.tar.gz
 
       - name: Next minor version
         id: version
@@ -119,5 +122,5 @@ jobs:
           GH_REPO: ${{ github.repository }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          gh release create "$TAG" SD_files.zip ide_out/*.zip \
+          gh release create "$TAG" SD_files.zip ide_out/aka-ide-windows.zip ide_out/aka-ide-linux.tar.gz \
             --target "$GITHUB_SHA" --title "AKA Toolkit $TAG" --generate-notes
