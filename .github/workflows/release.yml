@@ -108,10 +108,17 @@ jobs:
           cp dl/ide/*windows-x64*.zip  ide_out/aka-ide-windows.zip
           cp dl/ide/*linux-x64*.tar.gz ide_out/aka-ide-linux.tar.gz
 
+      # On calcule la prochaine version depuis les releases DÉJÀ PUBLIÉES (pas les
+      # tags git locaux : actions/checkout est superficiel et ne récupère aucun
+      # tag, le calcul local retombait donc toujours sur v0.1.0 -> gh release
+      # create échouait dès la 2e exécution car la release existait déjà).
       - name: Next minor version
         id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          last=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1)
+          last=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq '.[].tagName' \
+                 | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
           last=${last:-v0.0.0}
           IFS=. read -r major minor _ <<< "${last#v}"
           echo "tag=v${major}.$((minor + 1)).0" >> "$GITHUB_OUTPUT"
